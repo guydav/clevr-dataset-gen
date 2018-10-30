@@ -7,10 +7,7 @@
     "cone": "Cone",
     "torus": "Torus",
     "rectangle": "RectangularBox",
-    "curved": "CurvedShape",
-    "g1": "Goldstone1",
-    "g2": "Goldstone2",
-    "g3": "Goldstone3"
+    "curved": "CurvedShape"
   },
   "colors": {
     "gray": [87, 87, 87],
@@ -26,9 +23,12 @@
   },
   "materials": {
     "rubber": "Rubber",
-    "metal": "MyMetal"
+    "metal": "MyMetal",
+    "upholstery": "Upholstery"
   },
   "sizes": {
-    "large": 1.0
+    "large": 0.9,
+    "medium": 0.6,
+    "small": 0.3
   }
 }

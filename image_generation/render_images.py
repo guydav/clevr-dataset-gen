@@ -81,6 +81,13 @@ parser.add_argument('--min_pixels_per_object', default=200, type=int,
 parser.add_argument('--max_retries', default=50, type=int,
     help="The number of times to try placing an object before giving up and " +
          "re-placing all objects in the scene.")
+parser.add_argument('--each_attribute_once', action='store_true', default=False,
+    help="Whether or not to to only use each attribute once. Currently only shape/color.")
+parser.add_argument('--min_rotation_angle', default=0, type=int,
+    help="The minimal angle to rotate an object by, defaults to zero")
+parser.add_argument('--max_rotation_angle', default=360, type=int,
+    help="The maximal angle to rotate an object by, defaults to 360")
+
 
 # Output settings
 parser.add_argument('--start_idx', default=0, type=int,
@@ -204,7 +211,6 @@ def main(args):
   }
   with open(args.output_scene_file, 'w') as f:
     json.dump(output, f)
-
 
 
 def render_scene(args,
@@ -366,8 +372,11 @@ def add_random_objects(scene_struct, num_objects, args, camera):
         for obj in blender_objects:
           utils.delete_object(obj)
         return add_random_objects(scene_struct, num_objects, args, camera)
-      x = random.uniform(-3, 3)
-      y = random.uniform(-3, 3)
+      # TODO: restore
+      # x = random.uniform(-3, 3)
+      # y = random.uniform(-3, 3)
+      x = 0
+      y = 0
       # Check to make sure the new object is further than min_dist from all
       # other objects, and further than margin along the four cardinal directions
       dists_good = True
@@ -397,6 +406,10 @@ def add_random_objects(scene_struct, num_objects, args, camera):
     if shape_color_combos is None:
       obj_name, obj_name_out = random.choice(object_mapping)
       color_name, rgba = random.choice(list(color_name_to_rgba.items()))
+      if args.each_attribute_once:
+        object_mapping.remove((obj_name, obj_name_out))
+        del color_name_to_rgba[color_name]
+
     else:
       obj_name_out, color_choices = random.choice(shape_color_combos)
       color_name = random.choice(color_choices)
@@ -404,11 +417,12 @@ def add_random_objects(scene_struct, num_objects, args, camera):
       rgba = color_name_to_rgba[color_name]
 
     # For cube, adjust the size a bit
+    # TODO: decide to to generalize this
     if obj_name == 'Cube':
       r /= math.sqrt(2)
 
     # Choose random orientation for the object.
-    theta = 360.0 * random.random()
+    theta = (args.max_rotation_angle - args.min_rotation_angle) * random.random() + args.min_rotation_angle
 
     # Actually add the object to the scene
     utils.add_object(args.shape_dir, obj_name, r, (x, y), theta=theta)
