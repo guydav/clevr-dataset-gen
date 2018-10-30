@@ -1,16 +1,6 @@
 {
   "shapes": {
-    "cube": "SmoothCube_v2",
-    "sphere": "Sphere",
-    "cylinder": "SmoothCylinder",
-    "pyramid": "Pyramid",
-    "cone": "Cone",
-    "torus": "Torus",
-    "rectangle": "RectangularBox",
-    "curved": "CurvedShape",
-    "g1": "Goldstone1",
-    "g2": "Goldstone2",
-    "g3": "Goldstone3"
+    "sphere": "Sphere"
   },
   "colors": {
     "gray": [87, 87, 87],
