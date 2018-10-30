@@ -83,6 +83,8 @@ parser.add_argument('--max_retries', default=50, type=int,
          "re-placing all objects in the scene.")
 parser.add_argument('--each_attribute_once', action='store_true', default=False,
     help="Whether or not to to only use each attribute once. Currently only shape/color.")
+parser.add_argument('--equal_spacing', action='store_true', default=False,
+    help="Whether or not to attempt to space objects equally in space, with some noise.")
 parser.add_argument('--min_rotation_angle', default=0, type=int,
     help="The minimal angle to rotate an object by, defaults to zero")
 parser.add_argument('--max_rotation_angle', default=360, type=int,
@@ -356,6 +358,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
   positions = []
   objects = []
   blender_objects = []
+  equal_spacing_offset_angle = random.uniform(math.pi / 6.0, math.pi * 5.0 / 6.0)
   for i in range(num_objects):
     # Choose a random size
     size_name, r = random.choice(size_mapping)
@@ -372,11 +375,15 @@ def add_random_objects(scene_struct, num_objects, args, camera):
         for obj in blender_objects:
           utils.delete_object(obj)
         return add_random_objects(scene_struct, num_objects, args, camera)
-      # TODO: restore
-      # x = random.uniform(-3, 3)
-      # y = random.uniform(-3, 3)
-      x = 0
-      y = 0
+
+      if args.equal_spacing:
+        x = random.normalvariate(math.cos(2 * math.pi * i / num_objects) * 3, 0.4)
+        y = random.normalvariate(math.sin(2 * math.pi * i / num_objects) * 3, 0.4)
+
+      else:
+        x = random.uniform(-3, 3)
+        y = random.uniform(-3, 3)
+
       # Check to make sure the new object is further than min_dist from all
       # other objects, and further than margin along the four cardinal directions
       dists_good = True
@@ -417,7 +424,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
       rgba = color_name_to_rgba[color_name]
 
     # For cube, adjust the size a bit
-    # TODO: decide to to generalize this
+    # TODO: decide how (if?) to generalize this
     if obj_name == 'Cube':
       r /= math.sqrt(2)
 
@@ -429,6 +436,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
     obj = bpy.context.object
     blender_objects.append(obj)
     positions.append((x, y, r))
+    print(positions)
 
     # Attach a random material
     mat_name, mat_name_out = random.choice(material_mapping)
@@ -436,6 +444,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
 
     # Record data about the object in the scene data structure
     pixel_coords = utils.get_camera_coords(camera, obj.location)
+    print((x, y), pixel_coords)
     objects.append({
       'shape': obj_name_out,
       'size': size_name,
