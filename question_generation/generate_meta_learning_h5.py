@@ -46,12 +46,10 @@ parser.add_argument('--output_h5_file',
                     default='../output/CLEVR_meta_learning.h5',
                     help="The output file to write containing generated h5")
 
-
 # Flags
-parser.add_argument('--num_objects_per_image',
+parser.add_argument('--num_objects_per_image', type=int,
                     help='How many objects exist in each image (if variable, give the max)')
-
-parser.add_argument('--num_dimensions',
+parser.add_argument('--num_dimensions', default=2, type=int,
                     help='How many relevant dimensions identify each object')
 
 # Control which and how many images to process
@@ -75,18 +73,19 @@ def load_image(image_folder, image_filename):
 
 
 def create_dataset(output_path, image_folder, sample_query, num_images, num_query_units,
-                   num_objects_per_image):
+                   num_objects_per_image, num_dimensions):
     output_file = h5py.File(output_path, 'w')
     image_filename = sample_query['image_filename']
     image = load_image(image_folder, image_filename)
 
     X = output_file.create_dataset('X', (num_images, *image.shape), np.uint8)
+    D = output_file.create_dataset('D', (num_images, num_objects_per_image, num_dimensions), np.uint8)
     Q = output_file.create_dataset('Q', (num_images,
-                                         len(sample_query['queries']),
+                                         num_query_units,
                                          num_query_units), np.uint8)
-    y = output_file.create_dataset('y', (num_images, len(sample_query['queries'])), np.uint8)
+    y = output_file.create_dataset('y', (num_images, num_query_units), np.uint8)
 
-    return output_file, X, Q, y
+    return output_file, X, D, Q, y
 
 
 def main(args):
@@ -105,8 +104,9 @@ def main(args):
     num_colors = len(all_properties['colors'])
     num_shapes = len(all_properties['shapes'])
     num_query_units = num_colors + num_shapes
-    output_file, X, Q, y = create_dataset(args.output_h5_file, args.image_folder, all_queries[0],
-                                          len(all_queries), num_query_units, args.num_objects_per_image)
+    output_file, X, D, Q, y = create_dataset(args.output_h5_file, args.image_folder, all_queries[0],
+                                             len(all_queries), num_query_units,
+                                             args.num_objects_per_image, args.num_dimensions)
 
     # save properties
     properties_output = output_file.create_dataset('properties', (num_colors + num_shapes,),
@@ -125,16 +125,22 @@ def main(args):
         print('starting image %s (%d / %d)' % (image_filename, i + 1, len(all_queries)))
 
         X[i] = load_image(args.image_folder, image_filename)
+        current_d = np.ones((args.num_objects_per_image, args.num_dimensions), dtype=np.uint8) * 255
+        current_q = np.identity(num_query_units, dtype=np.uint8)
+        current_y = np.zeros((num_query_units,), dtype=np.uint8)
 
-        for j, (query_dict, query_y) in enumerate(queries):
-            q = np.zeros((num_query_units,), dtype=np.uint8)
-            if COLOR_KEY in query_dict:
-                q[query_dict[COLOR_KEY]] = 1
-            else:
-                q[num_colors + query_dict[SHAPE_KEY]] = 1
+        for j, query_dict in enumerate(queries):
+            color_idx = query_dict[COLOR_KEY]
+            shape_idx = num_colors + query_dict[SHAPE_KEY]
 
-            Q[i, j] = q
-            y[i, j] = query_y
+            current_d[j] = color_idx, shape_idx
+
+            current_y[color_idx] = 1
+            current_y[shape_idx] = 1
+
+        D[i] = current_d
+        Q[i] = current_q
+        y[i] = current_y
 
 
 if __name__ == '__main__':

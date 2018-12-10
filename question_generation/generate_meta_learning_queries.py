@@ -29,11 +29,11 @@ parser.add_argument('--input_scene_file', default='../output/CLEVR_scenes.json',
              "from render_images.py")
 parser.add_argument('--properties_file', default='../image_generation/data/properties.json',
                     help='The properties file used to generate the images in render_images.py')
-parser.add_argument('--num_features', default=1, type=int,
-                    help="The number of features to build queries about.")
-parser.add_argument('--only_true', action='store_true', help="Generate only true queries")
-parser.add_argument('--num_wrong_queries', default=0, type=int,
-                    help="The number of wrong queries to generate per image. If 0, generates all.")
+# parser.add_argument('--num_features', default=1, type=int,
+#                     help="The number of features to build queries about.")
+# parser.add_argument('--only_true', action='store_true', help="Generate only true queries")
+# parser.add_argument('--num_wrong_queries', default=0, type=int,
+#                     help="The number of wrong queries to generate per image. If 0, generates all.")
 
 # Output
 parser.add_argument('--output_queries_file',
@@ -67,22 +67,22 @@ SHAPE_KEY = 'shape'
 MATERIAL_KEY = 'material'
 
 
-def generate_false_queries(scene_questions, num_wrong_queries, objects, property_key, property_values):
-    true_properties = set([obj[property_key] for obj in objects])
-
-    if num_wrong_queries == 0:
-        for i, false_prop in enumerate(property_values):
-            if false_prop not in true_properties:
-                scene_questions.append(({property_key: i}, False))
-
-    else:
-        values_copy = property_values.copy()
-        for true_prop in true_properties:
-            values_copy.remove(true_prop)
-
-        false_values = random.sample(values_copy, num_wrong_queries)
-        for false_prop in false_values:
-            scene_questions.append(({property_key: property_values.index(false_prop)}, False))
+# def generate_false_queries(scene_questions, num_wrong_queries, objects, property_key, property_values):
+#     true_properties = set([obj[property_key] for obj in objects])
+#
+#     if num_wrong_queries == 0:
+#         for i, false_prop in enumerate(property_values):
+#             if false_prop not in true_properties:
+#                 scene_questions.append(({property_key: i}, False))
+#
+#     else:
+#         values_copy = property_values.copy()
+#         for true_prop in true_properties:
+#             values_copy.remove(true_prop)
+#
+#         false_values = random.sample(values_copy, num_wrong_queries)
+#         for false_prop in false_values:
+#             scene_questions.append(({property_key: property_values.index(false_prop)}, False))
 
 
 def main(args):
@@ -119,13 +119,13 @@ def main(args):
 
         for obj in scene_objects:
             # generate true queries
-            scene_queries.append(({COLOR_KEY: colors.index(obj[COLOR_KEY])}, True))
-            scene_queries.append(({SHAPE_KEY: shapes.index(obj[SHAPE_KEY])}, True))
+            scene_queries.append({COLOR_KEY: colors.index(obj[COLOR_KEY]),
+                                  SHAPE_KEY: shapes.index(obj[SHAPE_KEY])})
 
-        if not args.only_true:
-            for key, values in [(COLOR_KEY, colors), (SHAPE_KEY, shapes)]:
-                generate_false_queries(scene_queries, args.num_wrong_queries, scene_objects,
-                                       key, values)
+        # if not args.only_true:
+        #     for key, values in [(COLOR_KEY, colors), (SHAPE_KEY, shapes)]:
+        #         generate_false_queries(scene_queries, args.num_wrong_queries, scene_objects,
+        #                                key, values)
 
         image_index = int(os.path.splitext(scene_fn)[0].split('_')[-1])
         queries.append({
