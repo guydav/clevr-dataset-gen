@@ -46,6 +46,14 @@ parser.add_argument('--output_h5_file',
                     default='../output/CLEVR_meta_learning.h5',
                     help="The output file to write containing generated h5")
 
+
+# Flags
+parser.add_argument('--num_objects_per_image',
+                    help='How many objects exist in each image (if variable, give the max)')
+
+parser.add_argument('--num_dimensions',
+                    help='How many relevant dimensions identify each object')
+
 # Control which and how many images to process
 parser.add_argument('--scene_start_idx', default=0, type=int,
                     help="The image at which to start generating queries; this allows " +
@@ -62,12 +70,17 @@ parser.add_argument('--profile', action='store_true',
 # args = parser.parse_args()
 
 
-def create_dataset(output_path, image_folder, sample_query, num_images, num_query_units):
+def load_image(image_folder, image_filename):
+    return np.uint8(256 * color.rgba2rgb(io.imread(os.path.join(image_folder, image_filename))))
+
+
+def create_dataset(output_path, image_folder, sample_query, num_images, num_query_units,
+                   num_objects_per_image):
     output_file = h5py.File(output_path, 'w')
     image_filename = sample_query['image_filename']
-    image = color.rgba2rgb(io.imread(os.path.join(image_folder, image_filename)))
+    image = load_image(image_folder, image_filename)
 
-    X = output_file.create_dataset('X', (num_images, *image.shape), image.dtype)
+    X = output_file.create_dataset('X', (num_images, *image.shape), np.uint8)
     Q = output_file.create_dataset('Q', (num_images,
                                          len(sample_query['queries']),
                                          num_query_units), np.uint8)
@@ -93,7 +106,17 @@ def main(args):
     num_shapes = len(all_properties['shapes'])
     num_query_units = num_colors + num_shapes
     output_file, X, Q, y = create_dataset(args.output_h5_file, args.image_folder, all_queries[0],
-                                          len(all_queries), num_query_units)
+                                          len(all_queries), num_query_units, args.num_objects_per_image)
+
+    # save properties
+    properties_output = output_file.create_dataset('properties', (num_colors + num_shapes,),
+                                                   h5py.special_dtype(vlen=str))
+    color_index_to_val = {v: k for k, v in all_properties['colors'].items()}
+    shape_index_to_val = {v: k for k, v in all_properties['shapes'].items()}
+    for i in range(num_colors):
+        properties_output[i] = color_index_to_val[i]
+    for i in range(num_shapes):
+        properties_output[num_colors + i] = shape_index_to_val[i]
 
     for i, query_set in enumerate(all_queries):
         # index = query_set['image_index']
@@ -101,7 +124,7 @@ def main(args):
         queries = query_set['queries']
         print('starting image %s (%d / %d)' % (image_filename, i + 1, len(all_queries)))
 
-        X[i] = color.rgba2rgb(io.imread(os.path.join(args.image_folder, image_filename)))
+        X[i] = load_image(args.image_folder, image_filename)
 
         for j, (query_dict, query_y) in enumerate(queries):
             q = np.zeros((num_query_units,), dtype=np.uint8)
