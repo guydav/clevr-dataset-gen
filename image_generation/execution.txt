@@ -1,1 +1,0 @@
-/Applications/Blender/blender.app/Contents/MacOS/blender --background --python render_images.py --  --render_num_samples 256 --num_images 4096 --min_objects 4 --max_objects 5 --margin 1 --each_attribute_once --min_rotation_angle 45 --max_rotation_angle 45 --render_tile_size 256 --camera_jitter 0 --equal_spacing --min_pixels_per_object 400
