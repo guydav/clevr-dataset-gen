@@ -75,7 +75,7 @@ def set_layer(obj, layer_idx):
         obj.layers[i] = (i == layer_idx)
 
 
-def add_object(object_dir, name, scale, loc, theta=0):
+def add_object(object_dir, object_name, scale, loc, theta=0):
     """
     Load an object from a file. We assume that in the directory object_dir, there
     is a file named "$name.blend" which contains a single object named "$name"
@@ -89,15 +89,15 @@ def add_object(object_dir, name, scale, loc, theta=0):
     # give the new object a unique name
     count = 0
     for obj in bpy.data.objects:
-        if obj.name.startswith(name):
+        if obj.name.startswith(object_name):
             count += 1
 
-    filename = os.path.join(object_dir, '%s.blend' % name, 'Object', name)
+    filename = os.path.join(object_dir, '%s.blend' % object_name, 'Object', object_name)
     bpy.ops.wm.append(filename=filename)
 
     # Give it a new name to avoid conflicts
-    new_name = '%s_%d' % (name, count)
-    bpy.data.objects[name].name = new_name
+    new_name = '%s_%d' % (object_name, count)
+    bpy.data.objects[object_name].name = new_name
 
     # Set the new object as active, then rotate, scale, and translate it
     x, y = loc
@@ -115,12 +115,15 @@ def load_materials(material_dir):
     """
     for fn in os.listdir(material_dir):
         if not fn.endswith('.blend'): continue
-        name = os.path.splitext(fn)[0]
-        filepath = os.path.join(material_dir, fn, 'NodeTree', name)
+        material_name = os.path.splitext(fn)[0]
+        filepath = os.path.join(material_dir, fn, 'NodeTree', material_name)
         bpy.ops.wm.append(filename=filepath)
 
 
-def add_material(name, **properties):
+OUTPUT_KEYS = ('Shader', 'BSDF')
+
+
+def add_material(material_name, **properties):
     """
     Create a new material and assign it to the active object. "name" should be the
     name of a material that has been previously loaded using load_materials.
@@ -130,13 +133,16 @@ def add_material(name, **properties):
 
     # Create a new material; it is not attached to anything and
     # it will be called "Material"
-    bpy.ops.material.new()
+    # bpy.ops.material.new()
 
     # Get a reference to the material we just created and rename it;
     # then the next time we make a new material it will still be called
     # "Material" and we will still be able to look it up by name
-    mat = bpy.data.materials['Material']
-    mat.name = 'Material_%d' % mat_count
+    mat = bpy.data.materials.new('Material_%d' % mat_count)
+    mat.use_nodes = True
+
+    if 'Diffuse BSDF' in mat.node_tree.nodes:
+        mat.node_tree.nodes.remove(mat.node_tree.nodes['Diffuse BSDF'])
 
     # Attach the new material to the active object
     # Make sure it doesn't already have materials
@@ -145,11 +151,12 @@ def add_material(name, **properties):
     obj.data.materials.append(mat)
 
     # Find the output node of the new material
-    output_node = None
-    for n in mat.node_tree.nodes:
-        if n.name == 'Material Output':
-            output_node = n
-            break
+    # output_node = None
+    # for n in mat.node_tree.nodes:
+    #     if n.name == 'Material Output':
+    #         output_node = n
+    #         break
+    output_node = mat.node_tree.nodes['Material Output']
 
     # Add a new GroupNode to the node tree of the active material,
     # and copy the node tree from the preloaded node group to the
@@ -157,7 +164,12 @@ def add_material(name, **properties):
     # we can create multiple materials of the same type without them
     # clobbering each other
     group_node = mat.node_tree.nodes.new('ShaderNodeGroup')
-    group_node.node_tree = bpy.data.node_groups[name]
+    group_node.node_tree = bpy.data.node_groups[material_name]
+
+    # Fix the links in any image textures that might exist
+    # for node in group_node.node_tree:
+    #     if node.name.startswith('Image Texture'):
+
 
     # Find and set the "Color" input of the new group node
     for inp in group_node.inputs:
@@ -166,8 +178,15 @@ def add_material(name, **properties):
 
     # Wire the output of the new group node to the input of
     # the MaterialOutput node
-    mat.node_tree.links.new(
-            group_node.outputs['Shader'],
-            output_node.inputs['Surface'],
-    )
 
+    assert(any([key in group_node.outputs for key in OUTPUT_KEYS]))
+
+    for key in OUTPUT_KEYS:
+        if key in group_node.outputs:
+            mat.node_tree.links.new(
+                    group_node.outputs[key],
+                    output_node.inputs['Surface'],
+            )
+            break
+
+    obj.active_material = mat

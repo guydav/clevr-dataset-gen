@@ -1,7 +1,6 @@
 {
   "shapes": {
-    "sphere": "Sphere",
-    "cube": "SmoothCube_v2"
+    "sharp_cube": "SharpCube"
   },
   "colors": {
     "gray": [87, 87, 87],
@@ -16,11 +15,9 @@
     "pink": [255, 205, 243]
   },
   "materials": {
-    "upholstery": "Upholstery"
+    "metal_weave": "BSDFMetalWeave"
   },
   "sizes": {
-    "large": 0.9,
-    "medium": 0.6,
-    "small": 0.3
+    "large": 0.8
   }
 }
