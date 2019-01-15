@@ -4,7 +4,7 @@ import os
 PROPERTIES_TEMPLATE = """
 {
   "shapes": {
-    "sharp_cube": "SharpCube"
+    "cone": "Cone"
   },
   "colors": {
     "gray": [87, 87, 87],
@@ -22,20 +22,20 @@ PROPERTIES_TEMPLATE = """
     "name": "name"
   },
   "sizes": {
-    "large": 0.8
+    "large": 1.0
   }
 }
 """
 
-COMMAND_TEMPLATE = '/Applications/Blender/blender.app/Contents/MacOS/blender --background --python render_images.py -- --properties_json "{properties_path}" --output_image_dir "../output/materials/{name}/images" --output_scene_dir "../output/materials/scenes" --output_scene_file "../output/materials/CLEVR_scenes.json"  --render_num_samples 512 --num_images {num_images} --min_objects {num_objects} --max_objects {num_objects} --margin 1  --min_rotation_angle 45 --max_rotation_angle 45 --render_tile_size 256 --camera_jitter 0  --min_pixels_per_object 500 --width 256 --height 256 --base_scene_blendfile "data/base_scene_modified.blend"'
+COMMAND_TEMPLATE = '/Applications/Blender/blender.app/Contents/MacOS/blender --background --python render_images.py -- --properties_json "{properties_path}" --output_image_dir "../output/materials/{name}/images128" --output_scene_dir "../output/materials/scenes" --output_scene_file "../output/materials/CLEVR_scenes.json"  --render_num_samples 512 --num_images {num_images} --min_objects {num_objects} --max_objects {num_objects} --margin 0.5  --min_rotation_angle 45 --max_rotation_angle 45 --render_tile_size 256 --camera_jitter 0  --min_pixels_per_object 500 --width 128 --height 128 --base_scene_blendfile "data/base_scene_modified.blend"'
 
 
 NUM_IMAGES_PER_MATERIAL = 5
-NUM_OBJECTS_PER_IMAGE = 5
+NUM_OBJECTS_PER_IMAGE = 4
 MATERIAL_DIR = 'data/materials'
 PROPERTIES_PATH_TEMPLATE = '~/temp/properties.{name}.json'
 
-MISSING_MATERIALS = ('BSDFChainMail', 'BSDFMaze')
+MISSING_MATERIALS = ('BSDFDirtWipe', 'BSDFForestGround')
 
 
 def main():
