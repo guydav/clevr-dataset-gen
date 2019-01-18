@@ -9,6 +9,7 @@ from __future__ import print_function
 import math, sys, random, argparse, json, os, tempfile
 from datetime import datetime as dt
 from collections import Counter
+import numpy as np
 
 """
 Renders random scenes using Blender, each with with a random number of objects;
@@ -82,9 +83,25 @@ parser.add_argument('--max_retries', default=50, type=int,
         help="The number of times to try placing an object before giving up and " +
                  "re-placing all objects in the scene.")
 parser.add_argument('--each_attribute_once', action='store_true', default=False,
-        help="Whether or not to to only use each attribute once. Currently only shape/color.")
-parser.add_argument('--equal_spacing', action='store_true', default=False,
+        help="Whether or not to to only use each attribute once. ")
+parser.add_argument('--spacing_scale', default=3.0, type=float,
+        help="What lengthscale to use when randomizing object locations.")
+parser.add_argument('--x_spacing_scale', default=None, type=float,
+        help="What Y lengthscale to use when randomizing object locations.")
+parser.add_argument('--y_spacing_scale', default=None, type=float,
+        help="What X lengthscale to use when randomizing object locations.")
+parser.add_argument('--location_rotation_angle', default=0, type=int,
+        help="What angle to rotate random placements by (to arrive at a uniform square in a different orientation).")
+parser.add_argument('--equal_circular_spacing', action='store_true', default=False,
         help="Whether or not to attempt to space objects equally in space, with some noise.")
+parser.add_argument('--grid_spacing', action='store_true', default=False,
+        help="Whether or not to attempt to space objects equally on the x axis, and randomly on y")
+parser.add_argument('--grid_size', default=3, type=int,
+        help="Size of grid to use with grid spacing.")
+parser.add_argument('--x_grid_center', default=0.0, type=float,
+        help="Where to center the grid around in the X dimension")
+parser.add_argument('--y_grid_center', default=0.0, type=float,
+        help="Where to center the grid around in the Y dimension")
 parser.add_argument('--min_rotation_angle', default=0, type=int,
         help="The minimal angle to rotate an object by, defaults to zero")
 parser.add_argument('--max_rotation_angle', default=360, type=int,
@@ -370,7 +387,34 @@ def add_random_objects(scene_struct, num_objects, args, camera):
     positions = []
     objects = []
     blender_objects = []
-    equal_spacing_offset_angle = random.uniform(math.pi / 6.0, math.pi * 5.0 / 6.0)
+
+    x_spacing_scale = args.x_spacing_scale
+    if x_spacing_scale is None:
+        x_spacing_scale = args.spacing_scale
+
+    y_spacing_scale = args.y_spacing_scale
+    if y_spacing_scale is None:
+        y_spacing_scale = args.spacing_scale
+
+    rot_angle = args.location_rotation_angle * np.pi / 180.0
+    rot_matrix = np.asarray([[np.cos(rot_angle), -1 * np.sin(rot_angle)],
+                             [np.sin(rot_angle), np.cos(rot_angle)]])
+
+    # equal_circular_spacing_offset_angle = random.uniform(math.pi / 6.0, math.pi * 5.0 / 6.0)
+    if args.grid_spacing:
+        x_positions = np.linspace(-1 * x_spacing_scale + args.x_grid_center,
+                                  x_spacing_scale + args.x_grid_center, args.grid_size)
+        y_positions = np.linspace(-1 * y_spacing_scale + args.y_grid_center,
+                                  y_spacing_scale + + args.y_grid_center, args.grid_size)
+
+        xx, yy = np.meshgrid(x_positions, y_positions)
+        grid_positions = [np.matmul(rot_matrix, np.asarray(pos)) for pos in zip(xx.flat, yy.flat)]
+        random.shuffle(grid_positions)
+
+        # grid_positions = [np.matmul(rot_matrix, np.asarray(pos)) for pos in
+        #                   zip([-1 * x_spacing_scale, -1 * x_spacing_scale, 0, x_spacing_scale, x_spacing_scale],
+        #                       [-1 * y_spacing_scale, y_spacing_scale, 0, -1 * y_spacing_scale, y_spacing_scale])]
+
     for i in range(num_objects):
         # Choose a random size
         size_name, r = random.choice(size_mapping)
@@ -388,13 +432,20 @@ def add_random_objects(scene_struct, num_objects, args, camera):
                     utils.delete_object(obj)
                 return add_random_objects(scene_struct, num_objects, args, camera)
 
-            if args.equal_spacing:
-                x = random.normalvariate(math.cos(2 * math.pi * i / num_objects) * 3, 0.4)
-                y = random.normalvariate(math.sin(2 * math.pi * i / num_objects) * 3, 0.4)
+            if args.equal_circular_spacing:
+                x = random.normalvariate(math.cos(2 * math.pi * i / num_objects) * x_spacing_scale, 0.4)
+                y = random.normalvariate(math.sin(2 * math.pi * i / num_objects) * y_spacing_scale, 0.4)
+
+            elif args.grid_spacing:
+                x, y = grid_positions[i]
+                x = random.normalvariate(x, x_spacing_scale / 15.0)
+                y = random.normalvariate(y, y_spacing_scale / 15.0)
 
             else:
-                x = random.uniform(-3, 3)
-                y = random.uniform(-3, 3)
+                pos = np.asarray([np.random.uniform(-1 * x_spacing_scale, x_spacing_scale),
+                                  np.random.uniform(-1 * y_spacing_scale, y_spacing_scale)])
+
+                x, y = np.matmul(rot_matrix, pos)
 
             # Check to make sure the new object is further than min_dist from all
             # other objects, and further than margin along the four cardinal directions
@@ -452,6 +503,9 @@ def add_random_objects(scene_struct, num_objects, args, camera):
 
         # Attach a random material
         mat_name, mat_name_out = random.choice(material_mapping)
+        if args.each_attribute_once:
+            material_mapping.remove((mat_name, mat_name_out))
+
         utils.add_material(mat_name, Color=rgba)
 
         # Record data about the object in the scene data structure

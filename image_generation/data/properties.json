@@ -7,10 +7,9 @@
     "cone": "Cone",
     "torus": "Torus",
     "rectangle": "RectangularBox",
-    "curved": "CurvedShape",
-    "g1": "Goldstone1",
-    "g2": "Goldstone2",
-    "g3": "Goldstone3"
+    "ellipsoid": "Ellipsoid",
+    "octahedron": "Octahedron",
+    "dodecahedron": "Dodecahedron"
   },
   "colors": {
     "gray": [87, 87, 87],
@@ -25,8 +24,16 @@
     "pink": [255, 205, 243]
   },
   "materials": {
+    "metal": "MyMetal",
     "rubber": "Rubber",
-    "metal": "MyMetal"
+    "chain_mail": "BSDFChainMail",
+    "marble": "BSDFMarble",
+    "maze": "BSDFMaze",
+    "metal_weave": "BSDFMetalWeave",
+    "polka": "BSDFPolka",
+    "rug": "BSDFRug",
+    "tiles": "BSDFTiles",
+    "wood_plank": "BSDFWoodPlank"
   },
   "sizes": {
     "large": 0.8
