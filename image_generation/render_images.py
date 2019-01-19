@@ -129,7 +129,7 @@ parser.add_argument('--output_scene_dir', default='../output/scenes/',
                  "It will be created if it does not exist.")
 parser.add_argument('--output_scene_file', default='../output/CLEVR_scenes.json',
         help="Path to write a single JSON file containing all scene information")
-parser.add_argument('--output_blend_dir', default='output/blendfiles',
+parser.add_argument('--output_blend_dir', default='../output/blendfiles',
         help="The directory where blender scene files will be stored, if the " +
                  "user requested that these files be saved using the " +
                  "--save_blendfiles flag; in this case it will be created if it does " +
@@ -346,8 +346,13 @@ def render_scene(args,
         if image.filepath is None or len(image.filepath) == 0:
             continue
 
-        fixed_path = os.path.abspath(os.path.join(os.getcwd(), image.filepath)).replace('//data', '')
-        image.filepath = fixed_path
+        # fixed_path = os.path.abspath(os.path.join(os.getcwd(), 'data', image.filepath.replace('//', '')))
+        # fixed_path = image.filepath.replace('//data', '')
+        # print('*' * 100)
+        # print(image.filepath)
+        # print(fixed_path)
+        # print('*' * 100)
+        # image.filepath = fixed_path
 
     while True:
         try:
