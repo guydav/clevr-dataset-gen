@@ -1,6 +1,7 @@
 !.gitkeep
-*.jpg
+*.blend1
 *.jpeg
+*.jpg
 *.png
 *.tif
-*.blend1
+*.zip
