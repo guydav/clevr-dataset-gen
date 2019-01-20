@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source activate pytorch_p36
+# source activate pytorch_p36
 
 # Install Blender
 sudo add-apt-repository ppa:thomas-schiex/blender-legacy
