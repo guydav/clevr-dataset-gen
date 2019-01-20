@@ -1,6 +1,6 @@
 {
   "shapes": {
-    "cube": "SmoothCube_v2",
+    "cube": "SmoothCube_v2"
   },
   "colors": {
     "pink": [255, 205, 243]
