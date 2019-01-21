@@ -10,6 +10,7 @@ import math, sys, random, argparse, json, os, tempfile
 from datetime import datetime as dt
 from collections import Counter
 import numpy as np
+import psutil
 
 """
 Renders random scenes using Blender, each with with a random number of objects;
@@ -370,6 +371,7 @@ def render_scene(args,
         bpy.ops.wm.save_as_mainfile(filepath=output_blendfile)
 
 
+
 def add_random_objects(scene_struct, num_objects, args, camera):
     """
     Add random objects to the current blender scene
@@ -586,7 +588,13 @@ def check_visibility(blender_objects, min_pixels_per_object):
     p = list(img.pixels)
     color_count = Counter((p[i], p[i+1], p[i+2], p[i+3])
                                                 for i in range(0, len(p), 4))
+    found = False
+    for fd in psutil.Process().open_files():
+        if fd.path == path:
+            os.close(fd.fd)
+    
     os.remove(path)
+
     if len(color_count) != len(blender_objects) + 1:
         return False
     for _, count in color_count.most_common():
