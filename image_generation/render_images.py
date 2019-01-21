@@ -335,7 +335,9 @@ def render_scene(args,
             bpy.data.objects['Lamp_Fill'].location[i] += rand(args.fill_light_jitter)
 
     # Now make some random objects
-    objects, blender_objects = add_random_objects(scene_struct, num_objects, args, camera)
+    success = False
+    while success is False:
+        success, objects, blender_objects = add_random_objects(scene_struct, num_objects, args, camera)
 
     # Render the scene and dump the scene data structure
     scene_struct['objects'] = objects
@@ -435,7 +437,7 @@ def add_random_objects(scene_struct, num_objects, args, camera):
             if num_tries > args.max_retries:
                 for obj in blender_objects:
                     utils.delete_object(obj)
-                return add_random_objects(scene_struct, num_objects, args, camera)
+                return False, None, None
 
             if args.equal_circular_spacing:
                 x = random.normalvariate(math.cos(2 * math.pi * i / num_objects) * x_spacing_scale, 0.4)
@@ -535,9 +537,9 @@ def add_random_objects(scene_struct, num_objects, args, camera):
         print('Some objects are occluded; replacing objects')
         for obj in blender_objects:
             utils.delete_object(obj)
-        return add_random_objects(scene_struct, num_objects, args, camera)
+        return False, None, None
 
-    return objects, blender_objects
+    return True, objects, blender_objects
 
 
 def compute_all_relationships(scene_struct, eps=0.2):
