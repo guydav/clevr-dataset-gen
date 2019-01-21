@@ -10,7 +10,14 @@ import math, sys, random, argparse, json, os, tempfile
 from datetime import datetime as dt
 from collections import Counter
 import numpy as np
-import psutil
+
+found_psutil = False
+try:
+    import psutil
+    found_psutil = True
+
+except ImportError as e:
+    print('Could not import psutil, will not close file handles')
 
 """
 Renders random scenes using Blender, each with with a random number of objects;
@@ -42,6 +49,9 @@ if INSIDE_BLENDER:
         print("\nWhere $BLENDER is the directory where Blender is installed, and")
         print("$VERSION is your Blender version (such as 2.78).")
         sys.exit(1)
+
+
+
 
 parser = argparse.ArgumentParser()
 
@@ -588,11 +598,12 @@ def check_visibility(blender_objects, min_pixels_per_object):
     p = list(img.pixels)
     color_count = Counter((p[i], p[i+1], p[i+2], p[i+3])
                                                 for i in range(0, len(p), 4))
-    found = False
-    for fd in psutil.Process().open_files():
-        if fd.path == path:
-            os.close(fd.fd)
-    
+
+    if found_psutil:
+        for fd in psutil.Process().open_files():
+            if fd.path == path:
+                os.close(fd.fd)
+
     os.remove(path)
 
     if len(color_count) != len(blender_objects) + 1:
