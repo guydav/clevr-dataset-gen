@@ -39,8 +39,8 @@ SHAPES = {
     # "torus": "Torus",
     # "rectangle": "RectangularBox",
     # "ellipsoid": "Ellipsoid",
-    # "octahedron": "Octahedron",
-    "dodecahedron": "Dodecahedron"
+    "octahedron": "Octahedron",
+    # "dodecahedron": "Dodecahedron"
 }
 
 
