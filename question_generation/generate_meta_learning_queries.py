@@ -14,11 +14,8 @@ import re
 """
 TODO: document
 
-TODO: add materials as well
+TODO: if using num_wrong_queries, how do I divide them between properties?
 
-TODO: if using num_wrong_queries, how do I devide them between properties?
-
-TODO: multiple-property generating queries
 """
 
 parser = argparse.ArgumentParser()
@@ -104,7 +101,7 @@ def main(args):
         properties = json.load(f)
         colors = sorted(properties['colors'].keys())
         shapes = sorted(properties['shapes'].keys())
-        # materials = sorted(properties['materials'].keys())
+        materials = sorted(properties['materials'].keys())
 
     queries = []
     scene_count = 0
@@ -120,7 +117,8 @@ def main(args):
         for obj in scene_objects:
             # generate true queries
             scene_queries.append({COLOR_KEY: colors.index(obj[COLOR_KEY]),
-                                  SHAPE_KEY: shapes.index(obj[SHAPE_KEY])})
+                                  SHAPE_KEY: shapes.index(obj[SHAPE_KEY]),
+                                  MATERIAL_KEY: materials.index(obj[MATERIAL_KEY])})
 
         # if not args.only_true:
         #     for key, values in [(COLOR_KEY, colors), (SHAPE_KEY, shapes)]:
@@ -143,8 +141,9 @@ def main(args):
             'queries': queries,
             'properties': {
                 'colors': {color: colors.index(color) for color in colors},
-                'shapes': {shape: shapes.index(shape) for shape in shapes}
-                # TODO: add materials
+                'shapes': {shape: shapes.index(shape) for shape in shapes},
+                'materials': {mat: materials.index(mat) for mat in materials}
+
             },
         }, f)
 

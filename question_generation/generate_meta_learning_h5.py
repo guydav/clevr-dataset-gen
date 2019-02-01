@@ -47,9 +47,9 @@ parser.add_argument('--output_h5_file',
                     help="The output file to write containing generated h5")
 
 # Flags
-parser.add_argument('--num_objects_per_image', type=int,
+parser.add_argument('--num_objects_per_image', default=5, type=int,
                     help='How many objects exist in each image (if variable, give the max)')
-parser.add_argument('--num_dimensions', default=2, type=int,
+parser.add_argument('--num_dimensions', default=3, type=int,
                     help='How many relevant dimensions identify each object')
 
 # Control which and how many images to process
@@ -103,20 +103,27 @@ def main(args):
 
     num_colors = len(all_properties['colors'])
     num_shapes = len(all_properties['shapes'])
-    num_query_units = num_colors + num_shapes
+    num_materials = len(all_properties['materials'])
+    num_query_units = num_colors + num_shapes + num_materials
+
     output_file, X, D, Q, y = create_dataset(args.output_h5_file, args.image_folder, all_queries[0],
                                              len(all_queries), num_query_units,
                                              args.num_objects_per_image, args.num_dimensions)
 
     # save properties
-    properties_output = output_file.create_dataset('properties', (num_colors + num_shapes,),
+    properties_output = output_file.create_dataset('properties', (num_query_units,),
                                                    h5py.special_dtype(vlen=str))
+
     color_index_to_val = {v: k for k, v in all_properties['colors'].items()}
     shape_index_to_val = {v: k for k, v in all_properties['shapes'].items()}
+    material_index_to_val = {v: k for k, v in all_properties['materials'].items()}
+
     for i in range(num_colors):
         properties_output[i] = color_index_to_val[i]
     for i in range(num_shapes):
         properties_output[num_colors + i] = shape_index_to_val[i]
+    for i in range(num_materials):
+        properties_output[num_colors + num_shapes + i] = material_index_to_val[i]
 
     for i, query_set in enumerate(all_queries):
         # index = query_set['image_index']
@@ -132,11 +139,13 @@ def main(args):
         for j, query_dict in enumerate(queries):
             color_idx = query_dict[COLOR_KEY]
             shape_idx = num_colors + query_dict[SHAPE_KEY]
+            material_idx = num_colors + num_shapes + query_dict[MATERIAL_KEY]
 
-            current_d[j] = color_idx, shape_idx
+            current_d[j] = color_idx, shape_idx, material_idx
 
             current_y[color_idx] = 1
             current_y[shape_idx] = 1
+            current_y[material_idx] = 1
 
         D[i] = current_d
         Q[i] = current_q
